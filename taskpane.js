@@ -17,7 +17,21 @@ const CONFIG = {
   listName: "Chrono Courriers",                  // nom exact de la liste
 
   // Émetteurs proposés (doivent exister dans la colonne Choix "Emetteur")
-  emetteurs: ["DG", "DSSI", "DSI"],
+  emetteurs: [
+    "DG",    // Direction Générale
+    "RCJ",   // Régulation et Contrôle des Jeux
+    "SCG",   // Secrétariat Général / Direction Juridique
+    "DAI",   // Audit Interne
+    "DCI",   // Contrôle Interne
+    "DSI",   // Systèmes d'Information
+    "DSSI",  // Sécurité des Systèmes d'Information
+    "DMC",   // Marketing et Communication
+    "DCR",   // Développement Commercial et Réseau
+    "AMG",   // Achats et Moyens Généraux
+    "CPH",   // Capital Humain
+    "DFP",   // Finance et Performance
+    "CPS",   // (à confirmer)
+  ],
 
   // Attente du flux : intervalle et durée maximale (millisecondes)
   pollIntervalMs: 1500,
