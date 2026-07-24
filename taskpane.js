@@ -132,6 +132,20 @@ async function resoudreListe(jeton) {
   listId = liste.id;
 }
 
+/* ---------------------- Nom du document ------------------------------ */
+// Renvoie le nom du fichier Word ouvert (vide si le document n'est pas encore enregistré)
+function nomDuDocument() {
+  try {
+    var url = (Office.context.document && Office.context.document.url) || "";
+    if (!url) return "";
+    var nom = url.split("?")[0].split("#")[0].split(/[\\/]/).pop();
+    try { nom = decodeURIComponent(nom); } catch (e) {}
+    return nom;
+  } catch (e) {
+    return "";
+  }
+}
+
 /* ---------------------- Scénario principal --------------------------- */
 async function genererReference() {
   const btn = $("generer");
@@ -147,8 +161,12 @@ async function genererReference() {
     await resoudreListe(jeton);
 
     statut("Demande du prochain numéro…");
+    const champs = { Title: objet || "(sans objet)", Emetteur: emetteur };
+    const doc = nomDuDocument();
+    if (doc) champs.Document = doc;
+
     const item = await graph(jeton, "POST", `/sites/${siteId}/lists/${listId}/items`, {
-      fields: { Title: objet || "(sans objet)", Emetteur: emetteur },
+      fields: champs,
     });
 
     statut("Attribution en cours (file d'attente centrale)…");
@@ -221,5 +239,7 @@ function messageErreur(e) {
     return "Connexion annulée ou fenêtre bloquée : autorisez les fenêtres contextuelles puis réessayez.";
   if (m.includes("400") && m.includes("Emetteur"))
     return "La colonne « Emetteur » est absente ou ne contient pas cette valeur : vérifiez la liste (phase 1).";
+  if (m.includes("400") && m.includes("Document"))
+    return "La colonne « Document » est absente de la liste : créez-la (type Texte) ou signalez-le à l'administrateur du registre.";
   return m;
 }
