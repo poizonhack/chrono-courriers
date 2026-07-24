@@ -1,16 +1,17 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Chrono Courriers</title>
+  <title>Chrono Courriers — GDJ</title>
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
   <script src="msal-browser.min.js"></script>
   <style>
     :root{
-      --encre:#1F4E79; --encre-fonce:#173B5C; --papier:#FAFAF7;
+      --encre:#0556AF; --encre-fonce:#04407F; --papier:#FAFAF7;
       --trait:#D8D5CC; --texte:#26251F; --sourdine:#6E6B60;
-      --ok:#2F6B3A; --alerte:#8A3B2E;
+      --ok:#107934; --alerte:#8A3B2E;
     }
     *{box-sizing:border-box; margin:0; padding:0;}
     html,body{height:100%;}
@@ -19,12 +20,28 @@
       font-size:13px; color:var(--texte); background:var(--papier);
       display:flex; flex-direction:column;
     }
+
+    /* ---------- En-tête institutionnel ---------- */
     header{
       background:var(--encre); color:#fff; padding:12px 14px;
-      border-bottom:3px solid var(--encre-fonce);
+      border-bottom:3px solid #FFD300;
+      display:flex; align-items:center; gap:11px;
     }
+    #logo{
+      width:38px; height:38px; flex:0 0 38px;
+      object-fit:contain; background:#fff; border-radius:4px; padding:3px;
+      display:none;                 /* affiché seulement si le fichier existe */
+    }
+    #logoTexte{
+      width:38px; height:38px; flex:0 0 38px;
+      display:flex; align-items:center; justify-content:center;
+      background:#fff; color:var(--encre); border-radius:4px;
+      font-weight:700; font-size:13px; letter-spacing:.5px;
+    }
+    header .titres{min-width:0;}
     header h1{font-size:14px; font-weight:600; letter-spacing:.4px;}
-    header p{font-size:11px; opacity:.75; margin-top:2px;}
+    header p{font-size:11px; opacity:.78; margin-top:2px;}
+
     main{flex:1; padding:14px; overflow-y:auto;}
     label{
       display:block; font-size:11px; text-transform:uppercase;
@@ -46,12 +63,16 @@
     #statut{min-height:18px; margin-top:10px; font-size:12px; color:var(--sourdine);}
     #statut.ok{color:var(--ok);} #statut.alerte{color:var(--alerte);}
 
-    /* Le tampon : la référence attribuée, rendue comme un cachet administratif */
+    /* ---------- Le tampon ---------- */
     #tampon{
-      display:none; margin-top:16px; padding:14px 10px; text-align:center;
+      display:none; position:relative; margin-top:16px; padding:14px 10px; text-align:center;
       border:2px solid var(--encre); border-radius:4px; color:var(--encre);
       background:#fff; transform:rotate(-1.2deg);
-      box-shadow:1px 2px 0 rgba(31,78,121,.15);
+      box-shadow:1px 2px 0 rgba(5,86,175,.15); overflow:hidden;
+    }
+    #tamponFiligrane{
+      position:absolute; inset:0; margin:auto; width:74px; height:74px;
+      object-fit:contain; opacity:.07; pointer-events:none; display:none;
     }
     #tampon .lib{font-size:10px; letter-spacing:2px; text-transform:uppercase; opacity:.65;}
     #tampon .ref{font-size:16px; font-weight:700; letter-spacing:.5px; margin-top:4px; user-select:all;}
@@ -60,18 +81,29 @@
       #tampon.pose{animation:pose .25s ease-out;}
       @keyframes pose{from{transform:rotate(-1.2deg) scale(1.25); opacity:0;} to{transform:rotate(-1.2deg) scale(1); opacity:1;}}
     }
+
     footer{
       padding:8px 14px; border-top:1px solid var(--trait);
-      font-size:11px; color:var(--sourdine); display:flex; justify-content:space-between; align-items:center;
+      font-size:11px; color:var(--sourdine);
+      display:flex; justify-content:space-between; align-items:center; gap:8px;
     }
     footer a{color:var(--encre); text-decoration:none; cursor:pointer;}
     footer a:hover{text-decoration:underline;}
+    #compte{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+    #signature{
+      text-align:center; font-size:10px; color:var(--sourdine);
+      padding:0 14px 8px; letter-spacing:.3px;
+    }
   </style>
 </head>
 <body>
   <header>
-    <h1>Chrono Courriers</h1>
-    <p>Registre central des références</p>
+    <img id="logo" src="assets/logo.png" alt="Logo GDJ"/>
+    <div id="logoTexte">GDJ</div>
+    <div class="titres">
+      <h1>Chrono Courriers</h1>
+      <p>Registre central des références</p>
+    </div>
   </header>
 
   <main>
@@ -86,6 +118,7 @@
     <div id="statut" role="status"></div>
 
     <div id="tampon" aria-live="polite">
+      <img id="tamponFiligrane" src="assets/logo.png" alt=""/>
       <div class="lib">Référence attribuée</div>
       <div class="ref" id="tamponRef"></div>
       <div class="date" id="tamponDate"></div>
@@ -96,7 +129,22 @@
     <span id="compte">Non connecté</span>
     <a id="registre" title="Ouvrir le registre SharePoint">Ouvrir le registre</a>
   </footer>
+  <div id="signature">La Gabonaise Des Jeux</div>
 
+  <script>
+    // Affiche le logo si le fichier assets/logo.png existe, sinon garde le bloc « GDJ »
+    (function(){
+      var img = document.getElementById('logo');
+      var txt = document.getElementById('logoTexte');
+      var fil = document.getElementById('tamponFiligrane');
+      img.addEventListener('load', function(){
+        img.style.display = 'block';
+        txt.style.display = 'none';
+        fil.style.display = 'block';
+      });
+      img.addEventListener('error', function(){ img.remove(); fil.remove(); });
+    })();
+  </script>
   <script src="taskpane.js"></script>
 </body>
 </html>
